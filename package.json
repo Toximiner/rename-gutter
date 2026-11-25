@@ -1,0 +1,65 @@
+{
+  "name": "rename-gutter",
+  "displayName": "Rename Gutter",
+  "description": "PyCharm-style gutter icon on Python def/class lines: click it to rename the symbol or reveal all usages.",
+  "version": "0.1.0",
+  "publisher": "Toximiner",
+  "license": "MIT",
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Toximiner/rename-gutter"
+  },
+  "bugs": {
+    "url": "https://github.com/Toximiner/rename-gutter/issues"
+  },
+  "engines": {
+    "vscode": "^1.96.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "rename",
+    "gutter",
+    "refactoring",
+    "usages",
+    "python",
+    "pycharm"
+  ],
+  "main": "./src/extension.js",
+  "activationEvents": [
+    "onLanguage:python"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "renameGutter.actionsHere",
+        "title": "Rename Gutter: Actions for the def/class on the current line"
+      }
+    ],
+    "configuration": {
+      "title": "Rename Gutter",
+      "properties": {
+        "renameGutter.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the rename gutter icon on Python def/class lines.",
+          "scope": "resource"
+        },
+        "renameGutter.hoverOnly": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show the icon only on the line under the mouse, instead of on every def/class line.",
+          "scope": "resource"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "package": "vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "4.1.1"
+  }
+}
