@@ -1,8 +1,8 @@
 {
   "name": "rename-gutter",
   "displayName": "Rename Gutter",
-  "description": "PyCharm-style gutter icon on Python def/class lines: click it to rename the symbol or reveal all usages.",
-  "version": "0.1.0",
+  "description": "PyCharm-style marker on Python def/class lines: a gutter icon plus a clickable pencil after the name — rename the symbol or reveal all usages.",
+  "version": "0.1.1",
   "publisher": "Toximiner",
   "license": "MIT",
   "icon": "icon.png",
@@ -36,6 +36,10 @@
       {
         "command": "renameGutter.actionsHere",
         "title": "Rename Gutter: Actions for the def/class on the current line"
+      },
+      {
+        "command": "renameGutter.actionsAt",
+        "title": "Rename Gutter: Actions for the clicked declaration"
       }
     ],
     "configuration": {
@@ -44,13 +48,7 @@
         "renameGutter.enabled": {
           "type": "boolean",
           "default": true,
-          "description": "Show the rename gutter icon on Python def/class lines.",
-          "scope": "resource"
-        },
-        "renameGutter.hoverOnly": {
-          "type": "boolean",
-          "default": false,
-          "description": "Show the icon only on the line under the mouse, instead of on every def/class line.",
+          "description": "Show the rename gutter icon and the clickable pencil inlay on Python def/class lines.",
           "scope": "resource"
         }
       }

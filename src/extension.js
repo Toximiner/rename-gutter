@@ -14,8 +14,6 @@ const DECL_RE = /^([ \t]*)(?:async[ \t]+)?(def|class)[ \t]+([A-Za-z_][A-Za-z0-9_
 let decoration;
 /** @type {WeakMap<vscode.TextDocument, Map<number, Declaration>>} */
 const cache = new WeakMap();
-/** @type {number | undefined} line under the mouse (single mouse per window). */
-let mouseLine;
 /** @type {vscode.WebviewPanel | undefined} hidden panel that injects the icon CSS. */
 let cssPanel;
 
@@ -27,12 +25,11 @@ function isPython(doc) {
     return !!doc && doc.languageId === 'python';
 }
 
-/** @returns {{ enabled: boolean, hoverOnly: boolean }} */
+/** @returns {{ enabled: boolean }} */
 function settings() {
     const c = vscode.workspace.getConfiguration('renameGutter');
     return {
-        enabled: c.get('enabled', true),
-        hoverOnly: c.get('hoverOnly', false)
+        enabled: c.get('enabled', true)
     };
 }
 
@@ -126,28 +123,54 @@ async function showActions(doc, info, line) {
     }
 }
 
+/**
+ * Build a clickable inlay hint for one declaration: a small pencil right
+ * after the symbol name. Clicking it runs `renameGutter.actionsAt`.
+ *
+ * Note: this VS Code build exposes no mouse-event API
+ * (no window.onMouseDown / onDidChangeMousePosition), so a clickable
+ * gutter decoration is impossible — the inlay label part with a command
+ * is the supported interactive element.
+ *
+ * @param {number} line
+ * @param {Declaration} info
+ * @returns {vscode.InlayHint}
+ */
+function hintFor(line, info) {
+    const part = new vscode.InlayHintLabelPart('✎');
+    part.tooltip = new vscode.MarkdownString(
+        `**${info.name}** — rename / show usages`
+    );
+    part.command = {
+        title: 'Rename Gutter: actions',
+        command: 'renameGutter.actionsAt',
+        arguments: [line, info.nameStart]
+    };
+    const hint = new vscode.InlayHint(
+        new vscode.Position(line, info.nameStart + info.name.length),
+        [part],
+        vscode.InlayHintKind.Parameter
+    );
+    hint.paddingLeft = true;
+    hint.paddingRight = true;
+    return hint;
+}
+
 /** Apply the decoration for one editor. */
 function refreshEditor(editor) {
     if (!decoration) {
         return;
     }
     const doc = editor.document;
-    const cfg = settings();
-    if (!cfg.enabled || !isPython(doc)) {
+    if (!settings().enabled || !isPython(doc)) {
         editor.setDecorations(decoration, []);
         return;
     }
     const decls = declarationsFor(doc);
     /** @type {vscode.Range[]} */
     const ranges = [];
-    if (cfg.hoverOnly) {
-        if (mouseLine !== undefined && decls.has(mouseLine)) {
-            ranges.push(new vscode.Range(mouseLine, 0, mouseLine, 0));
-        }
-    } else {
-        for (const line of decls.keys()) {
-            ranges.push(new vscode.Range(line, 0, line, 0));
-        }
+    for (const line of decls.keys()) {
+        ranges.push(new vscode.Range(line, 0, line, 0));
     }
     editor.setDecorations(decoration, ranges);
 }
@@ -162,14 +185,12 @@ function refreshAll() {
 /** Inject the icon CSS through a hidden webview (no build assets needed). */
 function injectIconCss() {
     const css = [
-        '.rename-gutter-icon { cursor: pointer; }',
         '.rename-gutter-icon::before {',
         '    content: "\\270E";',
         '    font-size: 12px;',
         '    color: var(--vscode-descriptionForeground);',
         '    opacity: 0.8;',
-        '}',
-        '.rename-gutter-icon:hover::before { opacity: 1; }'
+        '}'
     ].join('\n');
     cssPanel = vscode.window.createWebviewPanel(
         'renameGutterCss',
@@ -217,29 +238,35 @@ function activate(context) {
                 refreshAll();
             }
         }),
-        vscode.window.onDidChangeMousePosition((e) => {
-            mouseLine = e ? e.position.line : undefined;
-            if (settings().hoverOnly) {
-                refreshAll();
+        // Clickable pencil inlay after each def/class name (the interactive
+        // part — gutter clicks are unavailable in this VS Code build).
+        vscode.languages.registerInlayHintsProvider('python', {
+            provideInlayHints: (doc, range) => {
+                if (!settings().enabled || !isPython(doc)) {
+                    return [];
+                }
+                const decls = declarationsFor(doc);
+                /** @type {vscode.InlayHint[]} */
+                const hints = [];
+                for (let line = range.start.line; line <= range.end.line && line < doc.lineCount; line++) {
+                    const info = decls.get(line);
+                    if (info) {
+                        hints.push(hintFor(line, info));
+                    }
+                }
+                return hints;
             }
         }),
-        vscode.window.onMouseDown((e) => {
-            if (e.button !== 0) {
-                return;
-            }
-            const cfg = settings();
-            if (!cfg.enabled) {
-                return;
-            }
+        vscode.commands.registerCommand('renameGutter.actionsAt', async (line, nameStart) => {
             const editor = vscode.window.activeTextEditor;
             if (!editor || !isPython(editor.document)) {
                 return;
             }
-            const info = declarationsFor(editor.document).get(e.position.line);
+            const info = declarationsFor(editor.document).get(line);
             if (!info) {
                 return;
             }
-            showActions(editor.document, info, e.position.line);
+            await showActions(editor.document, info, line);
         }),
         vscode.commands.registerCommand('renameGutter.actionsHere', async () => {
             const editor = vscode.window.activeTextEditor;
