@@ -1,0 +1,63 @@
+{
+  "name": "rename-gutter",
+  "displayName": "Rename Gutter",
+  "description": "PyCharm-style marker on Python def/class lines: a gutter icon plus a clickable pencil after the name — rename the symbol or reveal all usages.",
+  "version": "0.1.1",
+  "publisher": "Toximiner",
+  "license": "MIT",
+  "icon": "icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Toximiner/rename-gutter"
+  },
+  "bugs": {
+    "url": "https://github.com/Toximiner/rename-gutter/issues"
+  },
+  "engines": {
+    "vscode": "^1.96.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "rename",
+    "gutter",
+    "refactoring",
+    "usages",
+    "python",
+    "pycharm"
+  ],
+  "main": "./src/extension.js",
+  "activationEvents": [
+    "onLanguage:python"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "renameGutter.actionsHere",
+        "title": "Rename Gutter: Actions for the def/class on the current line"
+      },
+      {
+        "command": "renameGutter.actionsAt",
+        "title": "Rename Gutter: Actions for the clicked declaration"
+      }
+    ],
+    "configuration": {
+      "title": "Rename Gutter",
+      "properties": {
+        "renameGutter.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the rename gutter icon and the clickable pencil inlay on Python def/class lines.",
+          "scope": "resource"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "package": "vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "4.1.1"
+  }
+}
